@@ -47,5 +47,41 @@ SELECT  resultId AS result_id,
         current_timestamp() AS ingestion_date  
   FROM formula1_dev.bronze.results;
 
+-------------------------------------------------------------------------------------------------------------
+
+from pyspark.sql.types import StructType, StructField, StringType, IntegerType, DateType
+
+# Define your schema according to the structure of your Bronze table
+schema = StructType([
+    StructField("id", IntegerType(), True),
+    StructField("name", StringType(), True),
+    StructField("date_of_birth", DateType(), True),
+    StructField("metadata", StringType(), True)  # Example of a complex type, could be further nested
+])
+
+--------------------------------------------------------------------------------------------------------------
+# Load the data from the Bronze table
+df_bronze = spark.table("bronze_table_name")
+
+# Perform transformations if necessary
+df_silver = df_bronze.select("id", "name", "date_of_birth", "metadata")
+
+# Write to the Silver table, you can also enforce the schema if needed
+df_silver.write.format("delta").mode("overwrite").saveAsTable("silver_table_name")
+
+----------------------------------------------------------------------------------------------------------------------
+# Assuming the Silver table is already loaded as a DataFrame
+df_silver = spark.table("silver_table_name")
+
+# Define a new DataFrame with custom columns
+df_view = df_silver.withColumn("age", (2023 - year(df_silver["date_of_birth"]))).withColumn("name_uppercase", upper(df_silver["name"]))
+
+# Create a temporary view
+df_view.createOrReplaceTempView("silver_view")
+
+# Now the view can be used in Spark SQL
+spark.sql("SELECT id, name_uppercase, age FROM silver_view").show()
+
+
 -- COMMAND ----------
 
