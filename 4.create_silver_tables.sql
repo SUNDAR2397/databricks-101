@@ -82,6 +82,17 @@ df_view.createOrReplaceTempView("silver_view")
 # Now the view can be used in Spark SQL
 spark.sql("SELECT id, name_uppercase, age FROM silver_view").show()
 
+# Assuming df_bronze already adheres to the correct schema
+df_silver = df_bronze.select(
+    col("id").cast(IntegerType()),
+    col("name").cast(StringType()),
+    col("date_of_birth").cast(DateType()),
+    col("metadata").cast(StringType())
+)
+
+df_silver.write.format("delta").mode("overwrite").saveAsTable("silver_table_name")
+
+
 
 -- COMMAND ----------
 
